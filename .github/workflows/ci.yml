@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -el {0}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: mamba-org/setup-micromamba@v2.0.7
+        with:
+          environment-file: environment.yml
+          cache-environment: true
+      - name: Lint
+        run: |
+          ruff check src tests
+          ruff format --check src tests
+      - name: Tests
+        run: pytest -q
+      - name: Workflow dry-run
+        # Without the workflow profile: the dry-run only builds the DAG and needs no conda.
+        run: snakemake -n --workflow-profile none --config outdir=results/ci n_genomes=2

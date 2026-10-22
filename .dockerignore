@@ -1,0 +1,8 @@
+.git
+.snakemake
+results
+notebooks
+**/__pycache__
+.pytest_cache
+.ruff_cache
+*.egg-info
