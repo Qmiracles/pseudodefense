@@ -1,0 +1,46 @@
+# Referencias y decisiones metodologicas
+
+Formato: **Decision | Justificacion | Referencia (DOI/URL)**.
+Regla: ninguna referencia se agrega de memoria. Lo no verificado se marca `[POR VERIFICAR]`.
+
+## Herramientas
+
+| Herramienta | Uso | Referencia |
+|---|---|---|
+| DefenseFinder 3.0.0 | Deteccion de sistemas de defensa (primaria) | Tesson F. et al. (2022). Nat Commun 13. https://doi.org/10.1038/s41467-022-30269-9 |
+| PADLOC (CLI) | Comparacion entre herramientas (opcional) | Payne L.J. et al. (2021). Nucleic Acids Res 49:10868-10878. https://doi.org/10.1093/nar/gkab883 |
+| PADLOC (web / RefSeq precalculado) | Solo si se usan sus resultados precalculados | Payne L.J. et al. (2022). Nucleic Acids Res 50:W541-W550. https://doi.org/10.1093/nar/gkac400 |
+| Prodigal | Algoritmo de prediccion de genes | Hyatt D. et al. (2010). BMC Bioinformatics 11:119. https://doi.org/10.1186/1471-2105-11-119 |
+| pyrodigal 3.7 | Binding de Python a Prodigal (citar ambos) | Larralde M. (2022). JOSS 7(72):4296. https://doi.org/10.21105/joss.04296 |
+| FastANI | Desreplicacion por ANI (opcional) | Jain C. et al. (2018). Nat Commun 9:5114. https://doi.org/10.1038/s41467-018-07641-9 |
+| Snakemake 9.27 | Orquestacion | Molder F. et al. (2021). F1000Research 10:33. https://f1000research.com/articles/10-33 |
+| BACPHLIP (opcional) | Estilo de vida de fagos | Hockenberry A.J. & Wilke C.O. (2021). PeerJ 9:e11396. https://doi.org/10.7717/peerj.11396 |
+| NCBI Datasets CLI 18.39 | Descarga de genomas | Documentacion: https://github.com/ncbi/datasets ; version registrada en `manifest.tsv` y `versions.txt`. `[POR VERIFICAR si existe articulo citable]` |
+| MacSyFinder | Motor de DefenseFinder | `[POR VERIFICAR autores y ano]` |
+
+## Decisiones
+
+| Decision | Justificacion | Referencia |
+|---|---|---|
+| DefenseFinder como herramienta primaria | Detecta sistemas conocidos con modelos actualizables; aplicado a >20 000 genomas | Tesson et al. 2022 |
+| Reportar que la deteccion es conservadora | La configuracion prioriza sistemas completos; posible subdeteccion | Tesson et al. 2022 |
+| DefenseFinder en un entorno conda aislado (`workflow/envs/defensefinder.yml`) | v3.0.0 fija `click==8.0.3` y `macsyfinder==2.1.4` (requires_dist en PyPI, consultado 2026-10-21); aislarlo evita conflictos con typer/snakemake | https://pypi.org/project/mdmparis-defense-finder/3.0.0/ |
+| Prediccion de genes con pyrodigal | Resultados identicos a Prodigal v2.6.3; instalable sin binario externo | Larralde 2022; Hyatt 2010 |
+| Genomas RefSeq, nivel `complete` + `chromosome`, `--exclude-atypical` | Ensamblajes cerrados reducen artefactos en la deteccion de sistemas multigenicos; RefSeq aporta metadatos curados (incluido CheckM) | Decision del proyecto. Flags: https://www.ncbi.nlm.nih.gov/datasets/docs/v2/reference-docs/command-line/datasets/download/genome/datasets_download_genome_taxon/ |
+| Muestreo reproducible de `n_genomes` (semilla fija, orden por accesion) | Independiza la seleccion del orden de respuesta de NCBI | Decision del proyecto |
+| QC: longitud 5.5-7.8 Mb, <=20 secuencias, GC 65-67.5 % | Umbrales provisionales para *P. aeruginosa*; revisar con la distribucion observada del dataset | `[POR VERIFICAR: buscar referencia de tamano y GC de P. aeruginosa]` |
+| QC: CheckM completitud >=95 %, contaminacion <=5 % (si NCBI lo reporta) | Umbrales de uso comun para genomas de alta calidad | `[POR VERIFICAR: estandar MIMAG / referencia citable]` |
+| Umbral de 95 % ANI para especie | Discontinuidad intra (>95 %) vs inter-especie (<83 %) | Jain et al. 2018 |
+| Umbral de desreplicacion | Sin cifra citable universal; analisis de sensibilidad con varios umbrales | `[POR DEFINIR]` |
+| Benjamini-Hochberg en co-ocurrencia | Controla FDR; asume independencia (limitacion a mencionar) | Benjamini & Hochberg 1995. https://doi.org/10.1111/j.2517-6161.1995.tb02031.x |
+| Usar Snakemake | Reproducibilidad y transparencia | Molder et al. 2021 |
+| (Opcional) Solo genomas completos para BACPHLIP | Con genomas incompletos clasifica como virulento por defecto | Hockenberry & Wilke 2021; https://pypi.org/project/bacphlip |
+
+## Literatura de contexto sobre *Pseudomonas*
+
+1. Core defense hotspots within *P. aeruginosa*... Nucleic Acids Res 2023. https://doi.org/10.1093/nar/gkad317
+2. Accumulation of defense systems in phage-resistant strains of *P. aeruginosa*. https://pmc.ncbi.nlm.nih.gov/articles/PMC10889362 `[POR VERIFICAR autores y revista]`
+3. Defence systems drive accessory genome interactions in *P. aeruginosa*. ISME Communications. https://doi.org/10.1093/ismeco/ycag130
+4. Co-occurrence analysis of anti-phage systems in *P. aeruginosa* reveals prevalent neutral interactions. Microorganisms 13, 2783 (2025). `[POR VERIFICAR autores]`
+5. Bacteriophage genomes encode both broad and specific counter-defense repertoires... https://repository.tudelft.nl/file/File_7e1db523-5d5f-4330-9d17-f1c4315a03fb `[POR VERIFICAR autores y revista]`
+6. Georjon H. et al. (2023). Genomic characterization of the antiviral arsenal of Actinobacteria. Microbiology. https://doi.org/10.1099/mic.0.001374

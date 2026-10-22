@@ -1,0 +1,23 @@
+# Resultados pesados (solo se versiona un ejemplo reducido, agregado explicitamente)
+results/*
+!results/.gitkeep
+.snakemake/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+build/
+dist/
+
+# Genomas y paquetes de NCBI
+*.fna
+*.faa
+*.zip
+!tests/data/*.fna
+!tests/data/*.faa
+
+# Notebooks
+.ipynb_checkpoints/

@@ -1,0 +1,24 @@
+# Configuracion de pseudodefense. Todo parametro del pipeline vive aqui.
+
+outdir: results
+
+# --- Seleccion de genomas (NCBI Datasets) ---
+taxon: "Pseudomonas aeruginosa"
+assembly_levels: [complete, chromosome]
+assembly_source: RefSeq        # RefSeq (GCF_) o GenBank (GCA_)
+exclude_atypical: true
+n_genomes: 20                  # null = todos los genomas que cumplan los filtros
+random_seed: 42                # semilla del muestreo de n_genomes
+
+# --- QC de ensamblajes ---
+# Umbrales provisionales; ver docs/REFERENCES.md (decisiones [POR VERIFICAR]).
+qc:
+  min_length: 5500000          # pb
+  max_length: 7800000          # pb
+  max_sequences: 20            # secuencias en el FASTA (cromosoma + plasmidos)
+  min_gc: 65.0                 # %
+  max_gc: 67.5                 # %
+  min_checkm_completeness: 95.0  # % (se omite si NCBI no reporta CheckM)
+  max_checkm_contamination: 5.0  # %
+
+threads: 4

@@ -1,0 +1,9 @@
+# Entorno aislado para DefenseFinder (lo crea Snakemake con --sdm conda).
+# DefenseFinder 3.0.0 requiere HMMER >= 3.4.
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=3.12
+  - hmmer=3.4
+  - defense-finder=3.0.0

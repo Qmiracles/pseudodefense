@@ -1,0 +1,28 @@
+# Entorno principal de pseudodefense.
+# DefenseFinder vive en un entorno aparte (workflow/envs/defensefinder.yml)
+# porque fija click==8.0.3 y macsyfinder==2.1.4, incompatibles con este entorno.
+# Versiones verificadas en PyPI / anaconda.org el 2026-10-21.
+name: pseudodefense
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=3.12
+  - snakemake=9.27.*
+  - ncbi-datasets-cli=18.39.*
+  - pyrodigal=3.7.*
+  - pandas
+  - numpy
+  - scipy
+  - scikit-learn
+  - matplotlib
+  - seaborn
+  - biopython
+  - pyyaml
+  - typer
+  - pytest
+  - ruff
+  - pre-commit
+  - pip
+  - pip:
+      - -e .
