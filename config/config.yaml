@@ -1,6 +1,7 @@
 # Configuracion de pseudodefense. Todo parametro del pipeline vive aqui.
 
-outdir: results
+# Cada corrida en su subcarpeta: results/full (completa), results/pilot100, results/test20...
+outdir: results/full
 
 # --- Seleccion de genomas (NCBI Datasets) ---
 taxon: "Pseudomonas aeruginosa"
@@ -29,7 +30,9 @@ genes:
 
 # --- DefenseFinder ---
 defensefinder:
-  models_dir: resources/defensefinder_models  # descargados por la regla defensefinder_models
+  # Fuera del repo, en la carpeta del proyecto (ver README). Ruta relativa al repo;
+  # la regla defensefinder_models los descarga si no existen.
+  models_dir: ../resources/defensefinder_models
   # gembase: cada contig (cromosoma, plasmidos) es un replicon distinto; los IDs
   # <contig>_<n> de pyrodigal cumplen ese formato. Es lo que DefenseFinder 3.0.0
   # hace internamente cuando recibe un genoma en nucleotidos.

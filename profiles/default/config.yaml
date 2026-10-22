@@ -1,0 +1,5 @@
+# Perfil por defecto de Snakemake (se aplica automaticamente al correr `snakemake`).
+# Entornos conda de las reglas (DefenseFinder, Mash) fuera del repo, en la
+# carpeta del proyecto; rutas relativas al repo.
+software-deployment-method: conda
+conda-prefix: ../conda_envs
