@@ -1,6 +1,7 @@
 # pseudodefense
 
 [![CI](https://github.com/Qmiracles/pseudodefense/actions/workflows/ci.yml/badge.svg)](https://github.com/Qmiracles/pseudodefense/actions/workflows/ci.yml)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23577682.svg)](https://doi.org/10.5281/zenodo.23577682)
 
 Pipeline reproducible y abierto (Python + Snakemake) para anotar sistemas de defensa antifago en genomas publicos de *Pseudomonas* y describir su prevalencia y co-ocurrencia.
 
@@ -136,7 +137,9 @@ snakemake -n --workflow-profile none --config outdir=results/ci n_genomes=2   # 
 
 ## Como citar
 
-Ver [`CITATION.cff`](CITATION.cff). Cita tambien las herramientas que usa el pipeline (DefenseFinder, Prodigal/pyrodigal, Mash, FastANI, Snakemake), listadas en [docs/REFERENCES.md](docs/REFERENCES.md).
+Quevedo, A. (2026). *pseudodefense: pipeline reproducible para sistemas de defensa antifago en genomas de Pseudomonas* (v0.1.0). Zenodo. https://doi.org/10.5281/zenodo.23577683
+
+El DOI de concepto [10.5281/zenodo.23577682](https://doi.org/10.5281/zenodo.23577682) apunta siempre a la ultima version. Metadatos en [`CITATION.cff`](CITATION.cff). Cita tambien las herramientas que usa el pipeline (DefenseFinder, Prodigal/pyrodigal, Mash, FastANI, Snakemake), listadas en [docs/REFERENCES.md](docs/REFERENCES.md).
 
 ## Licencia
 

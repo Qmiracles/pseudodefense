@@ -7,6 +7,14 @@ authors:
     given-names: Armando
 version: 0.1.0
 date-released: 2026-10-22
+doi: 10.5281/zenodo.23577682
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.23577682
+    description: "Concept DOI: todas las versiones (resuelve a la mas reciente)"
+  - type: doi
+    value: 10.5281/zenodo.23577683
+    description: "DOI de la version 0.1.0"
 license: MIT
 repository-code: "https://github.com/Qmiracles/pseudodefense"
 keywords:
