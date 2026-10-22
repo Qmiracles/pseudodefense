@@ -61,6 +61,9 @@ analysis:
 derep:
   sketch_size: 10000           # default de Mash es 1000; mas resolucion a ANI > 99 %
   kmer: 21                     # default de Mash
-  thresholds: [99.9, 99.5, 99.0]  # % ANI; analisis de sensibilidad (sin umbral citable universal)
+  # % ANI; analisis de sensibilidad (sin umbral citable universal). En el piloto,
+  # la mayoria de pares de P. aeruginosa estan entre 98,5 y 99,3 % (Mash): 99,0 %
+  # agrupaba linajes enteros, no casi-clones. Ver docs/REFERENCES.md.
+  thresholds: [99.9, 99.8, 99.5]
 
 threads: 12
