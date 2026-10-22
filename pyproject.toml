@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pseudodefense"
-version = "0.1.0.dev0"
+version = "0.1.0"
 description = "Reproducible pipeline to survey anti-phage defense systems in Pseudomonas genomes"
 readme = "README.md"
 license = { text = "MIT" }

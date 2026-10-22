@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+message: "Si usas este software, citalo con estos metadatos y cita tambien las herramientas que usa (ver docs/REFERENCES.md)."
+title: "pseudodefense: pipeline reproducible para sistemas de defensa antifago en genomas de Pseudomonas"
+type: software
+authors:
+  - family-names: Quevedo
+    given-names: Armando
+version: 0.1.0
+date-released: 2026-10-22
+license: MIT
+repository-code: "https://github.com/Qmiracles/pseudodefense"
+keywords:
+  - bacteriophage
+  - anti-phage defense
+  - Pseudomonas aeruginosa
+  - DefenseFinder
+  - Snakemake
+abstract: >-
+  Pipeline en Python y Snakemake que descarga genomas publicos de NCBI, controla su
+  calidad, predice genes, detecta sistemas de defensa antifago con DefenseFinder y
+  describe su prevalencia y co-ocurrencia, con desreplicacion por ANI y marca de
+  sistemas fisicamente ligados.
