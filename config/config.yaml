@@ -56,6 +56,10 @@ analysis:
   linkage_bp: 10000
   prevalence_top_n: 30         # barras en la figura de prevalencia
   cooccurrence_plot_max_systems: 40
+  # Conjunto de genomas de la figura de co-ocurrencia: "all" o una etiqueta de
+  # desreplicacion (p. ej. ani99.5). Sin desreplicar, los casi-clones inflan las
+  # asociaciones (corrida completa: 663 pares con q < 0.05 en "all", 54 en ani99.5).
+  cooccurrence_plot_set: ani99.5
 
 # --- Desreplicacion (Mash) ---
 derep:

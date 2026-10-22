@@ -186,6 +186,10 @@ def plots_cmd(
     top_n: Annotated[int, typer.Option()] = 30,
     max_cooc_systems: Annotated[int, typer.Option()] = 40,
     alpha: Annotated[float, typer.Option()] = 0.05,
+    cooc_representatives: Annotated[
+        Path | None,
+        typer.Option(help="representatives_<label>.txt the co-occurrence table was built on."),
+    ] = None,
 ) -> None:
     """Heatmap, prevalence bars, systems-per-genome histogram and co-occurrence matrix."""
     m = pd.read_csv(matrix, sep="\t", index_col=0)
@@ -204,10 +208,17 @@ def plots_cmd(
         outdir / "systems_per_genome.png",
         f"Defense systems per genome ({taxon}, n = {n})",
     )
+    cooc_title = f"Co-occurrence of defense systems ({n} genomes)"
+    if cooc_representatives is not None:
+        n_reps = len(_read_accessions(cooc_representatives))
+        ani = cooc_representatives.stem.removeprefix("representatives_ani")
+        cooc_title = (
+            f"Co-occurrence of defense systems ({n_reps} genomes, one per {ani} % ANI cluster)"
+        )
     plots.cooccurrence_heatmap(
         pd.read_csv(cooccurrence, sep="\t"),
         outdir / "cooccurrence.png",
-        "Co-occurrence of defense systems",
+        cooc_title,
         alpha,
         max_cooc_systems,
     )

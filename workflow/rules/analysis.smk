@@ -67,13 +67,27 @@ rule stats_derep:
         "--linkage-bp {params.linkage_bp} > {log} 2>&1"
 
 
+COOC_PLOT_SET = config["analysis"]["cooccurrence_plot_set"]
+if COOC_PLOT_SET != "all" and COOC_PLOT_SET not in DEREP_LABELS:
+    raise ValueError(
+        f"analysis.cooccurrence_plot_set = {COOC_PLOT_SET!r}; use 'all' or one of {DEREP_LABELS}"
+    )
+
+
 rule plots:
-    """Figures (PNG + SVG)."""
+    """Figures (PNG + SVG). Co-occurrence is drawn for `cooccurrence_plot_set`."""
     input:
         matrix=f"{OUT}/tables/matrix_{config['analysis']['level']}.tsv",
         prevalence=rules.stats.output.prevalence,
         counts=rules.tables.output.counts,
-        cooccurrence=rules.stats.output.cooccurrence,
+        cooccurrence=(
+            rules.stats.output.cooccurrence
+            if COOC_PLOT_SET == "all"
+            else f"{OUT}/stats/cooccurrence_{COOC_PLOT_SET}.tsv"
+        ),
+        cooc_reps=(
+            [] if COOC_PLOT_SET == "all" else f"{OUT}/derep/representatives_{COOC_PLOT_SET}.txt"
+        ),
     output:
         heatmap=f"{OUT}/figures/presence_heatmap.png",
         prevalence=f"{OUT}/figures/prevalence.png",
@@ -84,10 +98,13 @@ rule plots:
         top_n=config["analysis"]["prevalence_top_n"],
         max_cooc=config["analysis"]["cooccurrence_plot_max_systems"],
         alpha=config["analysis"]["fdr_alpha"],
+        cooc_reps=lambda wc, input: (
+            f"--cooc-representatives {input.cooc_reps}" if input.cooc_reps else ""
+        ),
     log:
         f"{OUT}/logs/plots.log",
     shell:
         "pseudodefense plots --matrix {input.matrix} --prevalence {input.prevalence} "
-        "--counts {input.counts} --cooccurrence {input.cooccurrence} "
+        "--counts {input.counts} --cooccurrence {input.cooccurrence} {params.cooc_reps} "
         "--outdir {OUT}/figures --taxon '{params.taxon}' --top-n {params.top_n} "
         "--max-cooc-systems {params.max_cooc} --alpha {params.alpha} > {log} 2>&1"
