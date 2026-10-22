@@ -2,6 +2,7 @@
 results/*
 !results/.gitkeep
 .snakemake/
+resources/
 
 # Python
 __pycache__/

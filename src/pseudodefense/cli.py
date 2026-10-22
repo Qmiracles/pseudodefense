@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 from typing import Annotated
 
 import pandas as pd
 import typer
 
-from pseudodefense import download, qc
+from pseudodefense import defense, download, genes, qc
 
 app = typer.Typer(help="Survey of anti-phage defense systems in Pseudomonas genomes.")
 
@@ -80,6 +81,36 @@ def qc_cmd(
     result.to_csv(report, sep="\t", index=False)
     passed.write_text("".join(f"{a}\n" for a in result.loc[result["passed"], "accession"]))
     typer.echo(qc.qc_summary(result), nl=False)
+
+
+@app.command("genes")
+def genes_cmd(
+    fasta: Annotated[Path, typer.Option(help="Genome nucleotide FASTA.")],
+    faa: Annotated[Path, typer.Option(help="Output protein FASTA.")],
+    gff: Annotated[Path, typer.Option(help="Output GFF3.")],
+    translation_table: Annotated[int, typer.Option()] = 11,
+) -> None:
+    """Predict genes with pyrodigal (single mode)."""
+    n = genes.predict_genes(fasta, faa, gff, translation_table)
+    typer.echo(f"{fasta.name}: {n} genes")
+
+
+@app.command("parse-defense")
+def parse_defense_cmd(
+    accessions: Annotated[Path, typer.Option(help="File with one accession per line.")],
+    defensefinder_dir: Annotated[Path, typer.Option(help="Directory with <acc>/ outputs.")],
+    genes_dir: Annotated[Path, typer.Option(help="Directory with <acc>.gff files.")],
+    systems_out: Annotated[Path, typer.Option(help="Output tidy systems table (TSV).")],
+    genes_out: Annotated[Path, typer.Option(help="Output tidy genes table (TSV).")],
+) -> None:
+    """Combine DefenseFinder outputs into tidy systems and genes tables."""
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
+    accs = [line.strip() for line in accessions.read_text().splitlines() if line.strip()]
+    systems, genes_table = defense.parse_all(accs, defensefinder_dir, genes_dir)
+    systems_out.parent.mkdir(parents=True, exist_ok=True)
+    systems.to_csv(systems_out, sep="\t", index=False)
+    genes_table.to_csv(genes_out, sep="\t", index=False)
+    typer.echo(f"{len(accs)} genomes, {len(systems)} systems, {len(genes_table)} gene rows")
 
 
 if __name__ == "__main__":

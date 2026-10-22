@@ -21,4 +21,18 @@ qc:
   min_checkm_completeness: 95.0  # % (se omite si NCBI no reporta CheckM)
   max_checkm_contamination: 5.0  # %
 
+# --- Prediccion de genes (pyrodigal, modo single) ---
+genes:
+  translation_table: 11
+
+# --- DefenseFinder ---
+defensefinder:
+  models_dir: resources/defensefinder_models  # descargados por la regla defensefinder_models
+  # gembase: cada contig (cromosoma, plasmidos) es un replicon distinto; los IDs
+  # <contig>_<n> de pyrodigal cumplen ese formato. Es lo que DefenseFinder 3.0.0
+  # hace internamente cuando recibe un genoma en nucleotidos.
+  db_type: gembase
+  coverage: 0.4                # cobertura minima del perfil (default de DefenseFinder)
+  workers: 2                   # hilos por genoma
+
 threads: 4
