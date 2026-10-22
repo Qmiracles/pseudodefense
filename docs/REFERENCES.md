@@ -53,9 +53,17 @@ Regla: ninguna referencia se agrega de memoria. Lo no verificado se marca `[POR 
 
 ## Literatura de contexto sobre *Pseudomonas*
 
-1. Core defense hotspots within *P. aeruginosa*... Nucleic Acids Res 2023. https://doi.org/10.1093/nar/gkad317
-2. Accumulation of defense systems in phage-resistant strains of *P. aeruginosa*. https://pmc.ncbi.nlm.nih.gov/articles/PMC10889362 `[POR VERIFICAR autores y revista]`
+1. Johnson M.C. et al. (2023). Core defense hotspots within *P. aeruginosa* are a consistent and rich source of anti-phage defense systems. Nucleic Acids Res. https://doi.org/10.1093/nar/gkad317 (verificado en Crossref)
+2. Costa A.R. et al. (2024). Accumulation of defense systems in phage-resistant strains of *P. aeruginosa*. Sci Adv. https://doi.org/10.1126/sciadv.adj0341 (verificado en Crossref; inicial del nombre `[POR VERIFICAR]`)
 3. Defence systems drive accessory genome interactions in *P. aeruginosa*. ISME Communications. https://doi.org/10.1093/ismeco/ycag130
-4. Co-occurrence analysis of anti-phage systems in *P. aeruginosa* reveals prevalent neutral interactions. Microorganisms 13, 2783 (2025). `[POR VERIFICAR autores]`
+4. Han et al. (2025). More Is Not Always Better: Co-Occurrence Analysis of Anti-Phage Systems Reveals Prevalent Neutral Interactions in *P. aeruginosa*. Microorganisms 13:2783. https://doi.org/10.3390/microorganisms13122783 (verificado en Crossref; iniciales `[POR VERIFICAR]`)
 5. Bacteriophage genomes encode both broad and specific counter-defense repertoires... https://repository.tudelft.nl/file/File_7e1db523-5d5f-4330-9d17-f1c4315a03fb `[POR VERIFICAR autores y revista]`
 6. Georjon H. et al. (2023). Genomic characterization of the antiviral arsenal of Actinobacteria. Microbiology. https://doi.org/10.1099/mic.0.001374
+7. Correlation of *P. aeruginosa* Phage Resistance with the Numbers and Types of Antiphage Systems (2024). Int J Mol Sci 25. https://doi.org/10.3390/ijms25031424 (verificado en Crossref; autores `[POR VERIFICAR]`)
+8. Czernuszka M.R. et al. (2025). Bacteria-phage infection network structure and genomic defence system content predict efficacy of a phage therapy cocktail against *P. aeruginosa* from chronic lung infections. Phil Trans R Soc B 380:20240080. https://doi.org/10.1098/rstb.2024.0080 (verificado en Crossref)
+9. Garrett S.R. et al. (2025). Genomic islands in *Pseudomonas* encode modular hotspots of defence and anti-defence systems. NAR Genom Bioinform 7:lqaf148. https://doi.org/10.1093/nargab/lqaf148 (verificado en Crossref)
+10. Bae et al. (2025). *P. aeruginosa* as a model bacterium in antiphage defense research. FEMS Microbiol Rev. https://doi.org/10.1093/femsre/fuaf014 (verificado en Crossref; iniciales `[POR VERIFICAR]`)
+11. Tesson F. et al. (2024). Exploring the diversity of anti-defense systems across prokaryotes, phages and mobile genetic elements (AntiDefenseFinder). Nucleic Acids Res. https://doi.org/10.1093/nar/gkae1171 (verificado en Crossref)
+12. Vaitekenas et al. (2026). Genomic Determinants of Phage Activity Against *P. aeruginosa*: Roles of Receptors, Defence Systems, and Anti-Defences. bioRxiv (preprint, sin revision por pares). https://doi.org/10.64898/2026.02.22.706922 (verificado en Crossref)
+13. Intracellular barriers and receptor masking limit success of a *P. aeruginosa* clinical phage family (2026). bioRxiv (preprint). https://doi.org/10.64898/2026.06.18.732992 (verificado en Crossref; autores `[POR VERIFICAR]`)
+14. Bacterial Receptors but Not Anti-Phage Defence Mechanisms Determine Host Range for a Pair of *P. aeruginosa* Lytic Phages. https://pmc.ncbi.nlm.nih.gov/articles/PMC12918996/ `[POR VERIFICAR autores, revista y DOI]`
