@@ -158,7 +158,7 @@ def stats_cmd(
         Path | None, typer.Option(help="Tidy systems table, to compute pair distances.")
     ] = None,
     level: Annotated[str, typer.Option(help="Matrix level (type or subtype).")] = "type",
-    linkage_bp: Annotated[int, typer.Option(help="Max median gap to flag a linked pair.")] = 10_000,
+    linkage_bp: Annotated[int, typer.Option(help="Max median gap to flag a linked pair.")] = 50_000,
 ) -> None:
     """Prevalence with Wilson intervals and pairwise Fisher tests with BH correction."""
     m = pd.read_csv(matrix, sep="\t", index_col=0)
@@ -261,7 +261,7 @@ def stats_derep_cmd(
     alpha: Annotated[float, typer.Option()] = 0.05,
     min_genomes: Annotated[int, typer.Option()] = 1,
     level: Annotated[str, typer.Option()] = "type",
-    linkage_bp: Annotated[int, typer.Option()] = 10_000,
+    linkage_bp: Annotated[int, typer.Option()] = 50_000,
 ) -> None:
     """Prevalence for all genomes and each dereplicated set; co-occurrence per set."""
     m = pd.read_csv(matrix, sep="\t", index_col=0)

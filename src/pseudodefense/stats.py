@@ -65,7 +65,7 @@ def testable_systems(
 
 
 def pair_linkage(
-    cooc: pd.DataFrame, systems: pd.DataFrame, level: str = "type", linkage_bp: int = 10_000
+    cooc: pd.DataFrame, systems: pd.DataFrame, level: str = "type", linkage_bp: int = 50_000
 ) -> pd.DataFrame:
     """Add the genomic distance between the two systems of each tested pair.
 

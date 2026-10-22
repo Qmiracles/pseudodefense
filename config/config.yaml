@@ -52,8 +52,9 @@ analysis:
   cooccurrence_min_genomes: 3
   fdr_alpha: 0.05              # Benjamini-Hochberg
   # Pares cuya distancia mediana (mismo replicon) es <= linkage_bp se marcan como
-  # fisicamente ligados: co-ocurren por estar en el mismo locus.
-  linkage_bp: 10000
+  # fisicamente ligados: co-ocurren por estar en el mismo locus. 50 kb: en la corrida
+  # completa (99.5 % ANI) ningun par significativo cae entre 50 y 500 kb (ver REFERENCES.md).
+  linkage_bp: 50000
   prevalence_top_n: 30         # barras en la figura de prevalencia
   cooccurrence_plot_max_systems: 40
   # Conjunto de genomas de la figura de co-ocurrencia: "all" o una etiqueta de
