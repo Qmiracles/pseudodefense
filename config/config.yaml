@@ -70,5 +70,18 @@ derep:
   # la mayoria de pares de P. aeruginosa estan entre 98,5 y 99,3 % (Mash): 99,0 %
   # agrupaba linajes enteros, no casi-clones. Ver docs/REFERENCES.md.
   thresholds: [99.9, 99.8, 99.5]
+  # Validacion de Mash con FastANI: pares con ANI (Mash) a +- window puntos de
+  # cada umbral, donde un error de Mash cambiaria la asignacion a un cluster.
+  validation:
+    pairs_per_threshold: 30
+    window: 0.05
+
+# --- Informe ---
+report:
+  # Genomas de referencia que el informe ubica en los clusters (acceso RefSeq).
+  reference_genomes:
+    PAO1: GCF_000006765.1
+    UCBPP-PA14: GCF_000014625.1
+    LESB58: GCF_000026645.1
 
 threads: 12

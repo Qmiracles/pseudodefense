@@ -113,6 +113,105 @@ def choose_representatives(
     return df.drop(columns="quality_rank")
 
 
+def select_validation_pairs(
+    dist: pd.DataFrame,
+    thresholds: Sequence[float],
+    per_threshold: int,
+    window: float,
+    seed: int,
+) -> pd.DataFrame:
+    """Sample genome pairs whose Mash ANI lies near each threshold.
+
+    These are the pairs where a Mash error would move a genome across a cluster
+    boundary, so they are the ones worth re-measuring with an alignment-based ANI.
+
+    Args:
+        dist: square Mash distance matrix (:func:`read_mash_dist`).
+        thresholds: ANI thresholds (%).
+        per_threshold: pairs sampled per threshold (fewer if not enough exist).
+        window: half-width (ANI points) of the band around each threshold.
+        seed: random seed for the sample.
+
+    Returns:
+        Columns ``accession_a``, ``accession_b``, ``mash_ani``, ``near_threshold``;
+        a pair is listed once, under the first threshold that sampled it.
+
+    """
+    labels = np.asarray(dist.index)
+    iu, ju = np.triu_indices(len(labels), k=1)
+    ani = 100 * (1 - dist.to_numpy()[iu, ju])
+    rng = np.random.default_rng(seed)
+    rows, seen = [], set()
+    for t in thresholds:
+        idx = np.flatnonzero(np.abs(ani - t) <= window)
+        idx = [i for i in idx if (iu[i], ju[i]) not in seen]
+        take = rng.choice(idx, size=min(per_threshold, len(idx)), replace=False) if idx else []
+        for i in sorted(take):
+            seen.add((iu[i], ju[i]))
+            rows.append(
+                {
+                    "accession_a": labels[iu[i]],
+                    "accession_b": labels[ju[i]],
+                    "mash_ani": round(float(ani[i]), 4),
+                    "near_threshold": t,
+                }
+            )
+    return pd.DataFrame(rows, columns=["accession_a", "accession_b", "mash_ani", "near_threshold"])
+
+
+def read_fastani(path: Path) -> pd.DataFrame:
+    """Parse concatenated FastANI output (query, reference, ANI, mapped, total fragments)."""
+    if path.stat().st_size == 0:
+        return pd.DataFrame(columns=["accession_a", "accession_b", "fastani"])
+    df = pd.read_csv(
+        path, sep="\t", header=None, names=["query", "ref", "fastani", "mapped", "total"]
+    )
+    df["accession_a"] = df["query"].map(accession_from_path)
+    df["accession_b"] = df["ref"].map(accession_from_path)
+    return df[["accession_a", "accession_b", "fastani"]]
+
+
+def _pair_key(a: pd.Series, b: pd.Series) -> pd.Series:
+    """Order-independent key for a genome pair."""
+    return a.where(a < b, b) + "|" + b.where(a < b, a)
+
+
+def compare_ani(pairs: pd.DataFrame, fastani: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Compare Mash and FastANI estimates on the validation pairs.
+
+    Returns:
+        The per-pair table (``fastani`` is NaN when FastANI reported nothing) and a
+        per-threshold summary: pairs, pairs with FastANI, mean and median absolute
+        difference (FastANI - Mash) and the fraction of pairs that fall on the same
+        side of the threshold with both methods.
+
+    """
+    fa = fastani.copy()
+    fa["pair"] = _pair_key(fa["accession_a"], fa["accession_b"])
+    out = pairs.copy()
+    out["pair"] = _pair_key(out["accession_a"], out["accession_b"])
+    out = out.merge(fa[["pair", "fastani"]].drop_duplicates("pair"), on="pair", how="left")
+    out = out.drop(columns="pair")
+    out["difference"] = out["fastani"] - out["mash_ani"]
+    rows = []
+    for t, g in out.groupby("near_threshold", sort=False):
+        ok = g.dropna(subset=["fastani"])
+        same = (ok["mash_ani"] >= t) == (ok["fastani"] >= t)
+        rows.append(
+            {
+                "threshold_ani": t,
+                "n_pairs": len(g),
+                "n_with_fastani": len(ok),
+                "mean_difference": round(ok["difference"].mean(), 4) if len(ok) else np.nan,
+                "median_abs_difference": round(ok["difference"].abs().median(), 4)
+                if len(ok)
+                else np.nan,
+                "same_side_fraction": round(same.mean(), 3) if len(ok) else np.nan,
+            }
+        )
+    return out, pd.DataFrame(rows)
+
+
 def summary(clusters: pd.DataFrame, thresholds: Sequence[float]) -> pd.DataFrame:
     """Count clusters, the largest cluster size and singletons per threshold."""
     rows = []

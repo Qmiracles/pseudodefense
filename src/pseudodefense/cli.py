@@ -3,13 +3,25 @@
 from __future__ import annotations
 
 import logging
+import subprocess
 from pathlib import Path
 from typing import Annotated
 
 import pandas as pd
 import typer
 
-from pseudodefense import defense, derep, download, genes, plots, qc, stats, tables
+from pseudodefense import (
+    defense,
+    derep,
+    download,
+    genes,
+    pipeline,
+    plots,
+    qc,
+    report,
+    stats,
+    tables,
+)
 
 app = typer.Typer(help="Survey of anti-phage defense systems in Pseudomonas genomes.")
 
@@ -248,6 +260,58 @@ def dereplicate_cmd(
     typer.echo(summ.to_string(index=False))
 
 
+@app.command("ani-pairs")
+def ani_pairs_cmd(
+    dist: Annotated[Path, typer.Option(help="All-vs-all `mash dist` output (.tsv or .tsv.gz).")],
+    threshold: Annotated[list[float], typer.Option(help="ANI threshold (%); repeatable.")],
+    out: Annotated[Path, typer.Option(help="Output TSV of sampled pairs.")],
+    per_threshold: Annotated[int, typer.Option()] = 30,
+    window: Annotated[float, typer.Option(help="Half-width of the band (ANI points).")] = 0.05,
+    seed: Annotated[int, typer.Option()] = 42,
+) -> None:
+    """Sample genome pairs near each threshold to re-measure ANI with FastANI."""
+    pairs = derep.select_validation_pairs(
+        derep.read_mash_dist(dist), threshold, per_threshold, window, seed
+    )
+    pairs.to_csv(out, sep="\t", index=False)
+    typer.echo(pairs.groupby("near_threshold").size().to_string())
+
+
+@app.command("ani-compare")
+def ani_compare_cmd(
+    pairs: Annotated[Path, typer.Option(help="Pairs from `ani-pairs`.")],
+    fastani: Annotated[Path, typer.Option(help="Concatenated FastANI output.")],
+    table_out: Annotated[Path, typer.Option(help="Per-pair comparison table.")],
+    summary_out: Annotated[Path, typer.Option(help="Per-threshold summary.")],
+) -> None:
+    """Compare Mash and FastANI ANI for the validation pairs."""
+    table, summ = derep.compare_ani(pd.read_csv(pairs, sep="\t"), derep.read_fastani(fastani))
+    table.to_csv(table_out, sep="\t", index=False)
+    summ.to_csv(summary_out, sep="\t", index=False)
+    typer.echo(summ.to_string(index=False))
+
+
+@app.command("report")
+def report_cmd(
+    results: Annotated[Path, typer.Option(help="Run directory (e.g. results/full).")],
+    md_out: Annotated[Path, typer.Option(help="Markdown report.")],
+    html_out: Annotated[Path, typer.Option(help="Self-contained HTML report.")],
+    taxon: Annotated[str, typer.Option()],
+    cooc_set: Annotated[str, typer.Option(help="Genome set of the main co-occurrence.")],
+    reference: Annotated[
+        list[str] | None, typer.Option(help="NAME=ACCESSION of a reference genome; repeatable.")
+    ] = None,
+    alpha: Annotated[float, typer.Option()] = 0.05,
+    linkage_bp: Annotated[int, typer.Option()] = 50_000,
+) -> None:
+    """Write the run report (Markdown + HTML) from the pipeline outputs."""
+    refs = dict(r.split("=", 1) for r in reference or [])
+    doc = report.build_report(results, taxon, cooc_set, refs, alpha, linkage_bp)
+    md_out.write_text(report.to_markdown(doc), encoding="utf-8")
+    html_out.write_text(report.to_html(doc, results), encoding="utf-8")
+    typer.echo(f"report: {md_out}, {html_out}")
+
+
 @app.command("stats-derep")
 def stats_derep_cmd(
     matrix: Annotated[Path, typer.Option(help="Presence/absence matrix, all genomes.")],
@@ -287,6 +351,33 @@ def stats_derep_cmd(
     pd.concat(prev, ignore_index=True).to_csv(
         outdir / "prevalence_by_genome_set.tsv", sep="\t", index=False
     )
+
+
+@app.command("run")
+def run_cmd(
+    cores: Annotated[int, typer.Option(help="CPU cores for Snakemake.")] = 4,
+    config: Annotated[
+        list[str] | None,
+        typer.Option("--config", help="KEY=VALUE override of config/config.yaml; repeatable."),
+    ] = None,
+    configfile: Annotated[Path | None, typer.Option(help="Alternative config file.")] = None,
+    dry_run: Annotated[bool, typer.Option("--dry-run", "-n", help="Only show the plan.")] = False,
+    workdir: Annotated[Path, typer.Option(help="Repository root (holds the Snakefile).")] = Path(
+        "."
+    ),
+    target: Annotated[
+        list[str] | None, typer.Option(help="Rule or file to build; repeatable (default: all).")
+    ] = None,
+) -> None:
+    """Run the whole pipeline (wrapper around `snakemake`)."""
+    if not (workdir / "Snakefile").is_file():
+        raise typer.BadParameter(f"no Snakefile in {workdir.resolve()}", param_hint="--workdir")
+    try:
+        cmd = pipeline.snakemake_command(cores, config or [], configfile, dry_run, target or [])
+    except ValueError as err:
+        raise typer.BadParameter(str(err)) from err
+    typer.echo(" ".join(cmd))
+    raise typer.Exit(subprocess.run(cmd, cwd=workdir, check=False).returncode)
 
 
 if __name__ == "__main__":

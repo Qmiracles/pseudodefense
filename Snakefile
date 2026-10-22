@@ -16,6 +16,7 @@ include: "workflow/rules/defense.smk"
 include: "workflow/rules/derep.smk"
 include: "workflow/rules/analysis.smk"
 include: "workflow/rules/versions.smk"
+include: "workflow/rules/report.smk"
 
 
 rule all:
@@ -26,5 +27,7 @@ rule all:
         f"{OUT}/tables/subtypes.tsv",
         rules.plots.output,
         f"{OUT}/derep/summary.tsv",
+        f"{OUT}/derep/ani_validation_summary.tsv",
         f"{OUT}/stats/prevalence_by_genome_set.tsv",
         f"{OUT}/versions.txt",
+        rules.report.output,

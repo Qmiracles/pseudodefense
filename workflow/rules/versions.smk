@@ -3,6 +3,8 @@ rule versions:
     input:
         manifest=rules.download_genomes.output.manifest,
         defensefinder=f"{OUT}/defensefinder_versions.txt",
+        fastani=f"{OUT}/derep/fastani_version.txt",
+        mash=f"{OUT}/derep/mash_version.txt",
     output:
         f"{OUT}/versions.txt",
     shell:
@@ -16,5 +18,7 @@ rule versions:
           echo "pyrodigal: $(python -c 'import pyrodigal; print(pyrodigal.__version__)')"
           echo "pseudodefense: $(python -c 'import pseudodefense; print(pseudodefense.__version__)')"
           cat {input.defensefinder}
+          cat {input.fastani}
+          cat {input.mash}
         }} > {output}
         """
