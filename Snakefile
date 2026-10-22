@@ -13,6 +13,7 @@ include: "workflow/rules/download.smk"
 include: "workflow/rules/qc.smk"
 include: "workflow/rules/genes.smk"
 include: "workflow/rules/defense.smk"
+include: "workflow/rules/derep.smk"
 include: "workflow/rules/analysis.smk"
 include: "workflow/rules/versions.smk"
 
@@ -24,4 +25,6 @@ rule all:
         f"{OUT}/tables/defense_systems.tsv",
         f"{OUT}/tables/subtypes.tsv",
         rules.plots.output,
+        f"{OUT}/derep/summary.tsv",
+        f"{OUT}/stats/prevalence_by_genome_set.tsv",
         f"{OUT}/versions.txt",

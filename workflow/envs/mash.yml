@@ -1,0 +1,6 @@
+# Mash para distancias genomicas (aprox. 1 - ANI). Version verificada en bioconda el 2026-10-21.
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - mash=2.3

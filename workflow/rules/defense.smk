@@ -83,6 +83,8 @@ rule defensefinder:
         "../envs/defensefinder.yml"
     log:
         f"{OUT}/logs/defensefinder/{{accession}}.log",
+    benchmark:
+        f"{OUT}/benchmarks/defensefinder/{{accession}}.tsv"
     shell:
         "defense-finder run {input.faa} --out-dir {params.outdir} --workers {threads} "
         "--db-type {params.db_type} --coverage {params.coverage} "

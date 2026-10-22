@@ -7,15 +7,20 @@ Flow: ``datasets summary`` (metadata as JSON Lines) -> ``select_genomes``
 from __future__ import annotations
 
 import datetime as dt
+import gzip
 import json
+import logging
 import shutil
 import subprocess
 import tempfile
+import time
 import zipfile
 from collections.abc import Iterable, Sequence
 from pathlib import Path
 
 import pandas as pd
+
+log = logging.getLogger(__name__)
 
 MANIFEST_COLUMNS = [
     "accession",
@@ -149,44 +154,73 @@ def select_genomes(summary: pd.DataFrame, n: int | None, seed: int) -> pd.DataFr
     return ordered.sample(n=n, random_state=seed).sort_values("accession").reset_index(drop=True)
 
 
+def filter_taxonomy(summary: pd.DataFrame, allowed: Sequence[str] = ("OK",)) -> pd.DataFrame:
+    """Keep assemblies whose NCBI ANI taxonomy check status is in ``allowed``."""
+    keep = summary["ani_taxonomy_check"].isin(allowed)
+    dropped = summary.loc[~keep, ["accession", "ani_taxonomy_check"]]
+    for rec in dropped.itertuples(index=False):
+        log.warning("excluded %s: ANI taxonomy check = %s", rec.accession, rec.ani_taxonomy_check)
+    return summary[keep].reset_index(drop=True)
+
+
+def _download_batch(accessions: Sequence[str], tmp_path: Path, retries: int) -> Path:
+    """Download one batch with ``datasets`` and return the extracted data directory."""
+    acc_file = tmp_path / "accessions.txt"
+    acc_file.write_text("\n".join(accessions) + "\n")
+    zip_path = tmp_path / "ncbi_dataset.zip"
+    cmd = [
+        "datasets", "download", "genome", "accession",
+        "--inputfile", str(acc_file),
+        "--include", "genome",
+        "--filename", str(zip_path),
+    ]  # fmt: skip
+    for attempt in range(1, retries + 1):
+        try:
+            subprocess.run(cmd, check=True)
+            break
+        except subprocess.CalledProcessError:
+            if attempt == retries:
+                raise
+            log.warning("datasets download failed (attempt %d/%d), retrying", attempt, retries)
+            time.sleep(30 * attempt)
+    with zipfile.ZipFile(zip_path) as zf:
+        zf.extractall(tmp_path)
+    zip_path.unlink()
+    return tmp_path / "ncbi_dataset" / "data"
+
+
 def download_genomes(
-    selected: pd.DataFrame, genomes_dir: Path, manifest_path: Path
+    selected: pd.DataFrame,
+    genomes_dir: Path,
+    manifest_path: Path,
+    batch_size: int = 200,
+    retries: int = 3,
 ) -> pd.DataFrame:
     """Download FASTA files for ``selected`` accessions and write the manifest.
 
-    Each genome ends up as ``genomes_dir/<accession>.fna``.
+    Genomes are fetched in batches of ``batch_size``; each batch is extracted,
+    gzip-compressed into ``genomes_dir/<accession>.fna.gz`` and its temporary
+    files removed before the next one, so disk use peaks at about one batch.
+    A failed batch is retried ``retries`` times (logged), then the run stops.
     """
     genomes_dir.mkdir(parents=True, exist_ok=True)
     version = datasets_version()
     today = dt.date.today().isoformat()
-    with tempfile.TemporaryDirectory() as tmp:
-        tmp_path = Path(tmp)
-        acc_file = tmp_path / "accessions.txt"
-        acc_file.write_text("\n".join(selected["accession"]) + "\n")
-        zip_path = tmp_path / "ncbi_dataset.zip"
-        subprocess.run(
-            [
-                "datasets",
-                "download",
-                "genome",
-                "accession",
-                "--inputfile",
-                str(acc_file),
-                "--include",
-                "genome",
-                "--filename",
-                str(zip_path),
-            ],
-            check=True,
-        )
-        with zipfile.ZipFile(zip_path) as zf:
-            zf.extractall(tmp_path)
-        fastas = collect_fastas(tmp_path / "ncbi_dataset" / "data", selected["accession"])
-        for accession, src in fastas.items():
-            shutil.move(src, genomes_dir / f"{accession}.fna")
+    accessions = selected["accession"].tolist()
+    for start in range(0, len(accessions), batch_size):
+        batch = accessions[start : start + batch_size]
+        log.info("batch %d-%d of %d", start + 1, start + len(batch), len(accessions))
+        with tempfile.TemporaryDirectory(dir=genomes_dir.parent) as tmp:
+            data_dir = _download_batch(batch, Path(tmp), retries)
+            for accession, src in collect_fastas(data_dir, batch).items():
+                with (
+                    src.open("rb") as fin,
+                    gzip.open(genomes_dir / f"{accession}.fna.gz", "wb") as fout,
+                ):
+                    shutil.copyfileobj(fin, fout)
 
     manifest = selected.copy()
-    manifest["fasta"] = [str(genomes_dir / f"{a}.fna") for a in manifest["accession"]]
+    manifest["fasta"] = [str(genomes_dir / f"{a}.fna.gz") for a in manifest["accession"]]
     manifest["download_date"] = today
     manifest["datasets_version"] = version
     manifest = manifest[MANIFEST_COLUMNS]

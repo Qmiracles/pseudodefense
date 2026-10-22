@@ -40,6 +40,33 @@ rule stats:
         "--level {params.level} --linkage-bp {params.linkage_bp} > {log} 2>&1"
 
 
+rule stats_derep:
+    """Prevalence for all genomes and each dereplicated set; co-occurrence per set."""
+    input:
+        matrix=f"{OUT}/tables/matrix_{config['analysis']['level']}.tsv",
+        systems=rules.parse_defense.output.systems,
+        reps=rules.dereplicate.output.reps,
+    output:
+        prevalence=f"{OUT}/stats/prevalence_by_genome_set.tsv",
+        cooccurrence=expand(f"{OUT}/stats/cooccurrence_{{label}}.tsv", label=DEREP_LABELS),
+    params:
+        reps=lambda wc, input: " ".join(f"--representatives {p}" for p in input.reps),
+        min_prev=config["analysis"]["cooccurrence_min_prevalence"],
+        max_prev=config["analysis"]["cooccurrence_max_prevalence"],
+        alpha=config["analysis"]["fdr_alpha"],
+        min_genomes=config["analysis"]["cooccurrence_min_genomes"],
+        level=config["analysis"]["level"],
+        linkage_bp=config["analysis"]["linkage_bp"],
+    log:
+        f"{OUT}/logs/stats_derep.log",
+    shell:
+        "pseudodefense stats-derep --matrix {input.matrix} --systems {input.systems} "
+        "{params.reps} --outdir {OUT}/stats --min-prevalence {params.min_prev} "
+        "--max-prevalence {params.max_prev} --alpha {params.alpha} "
+        "--min-genomes {params.min_genomes} --level {params.level} "
+        "--linkage-bp {params.linkage_bp} > {log} 2>&1"
+
+
 rule plots:
     """Figures (PNG + SVG)."""
     input:

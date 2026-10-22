@@ -7,8 +7,10 @@ taxon: "Pseudomonas aeruginosa"
 assembly_levels: [complete, chromosome]
 assembly_source: RefSeq        # RefSeq (GCF_) o GenBank (GCA_)
 exclude_atypical: true
-n_genomes: 20                  # null = todos los genomas que cumplan los filtros
+require_ani_ok: true           # excluir ensamblajes con verificacion de especie ANI != OK
+n_genomes: null                # null = todos los genomas que cumplan los filtros
 random_seed: 42                # semilla del muestreo de n_genomes
+download_batch_size: 200       # genomas por descarga (limita el pico de disco)
 
 # --- QC de ensamblajes ---
 # Umbrales provisionales; ver docs/REFERENCES.md (decisiones [POR VERIFICAR]).
@@ -52,4 +54,10 @@ analysis:
   prevalence_top_n: 30         # barras en la figura de prevalencia
   cooccurrence_plot_max_systems: 40
 
-threads: 4
+# --- Desreplicacion (Mash) ---
+derep:
+  sketch_size: 10000           # default de Mash es 1000; mas resolucion a ANI > 99 %
+  kmer: 21                     # default de Mash
+  thresholds: [99.9, 99.5, 99.0]  # % ANI; analisis de sensibilidad (sin umbral citable universal)
+
+threads: 12

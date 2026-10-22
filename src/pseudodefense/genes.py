@@ -12,12 +12,14 @@ from pathlib import Path
 
 import pyrodigal
 
+from pseudodefense.fileio import open_text
+
 
 def read_fasta(path: Path) -> Iterator[tuple[str, str]]:
     """Yield ``(id, sequence)`` pairs from a nucleotide FASTA file."""
     seq_id: str | None = None
     chunks: list[str] = []
-    with path.open() as fh:
+    with open_text(path) as fh:
         for line in fh:
             line = line.strip()
             if line.startswith(">"):

@@ -11,6 +11,8 @@ from pathlib import Path
 
 import pandas as pd
 
+from pseudodefense.fileio import open_text
+
 
 @dataclass(frozen=True)
 class QCThresholds:
@@ -40,7 +42,7 @@ def fasta_stats(path: Path) -> FastaStats:
     GC% is computed over unambiguous bases (A, C, G, T) only.
     """
     length = n_sequences = gc = acgt = 0
-    with path.open() as fh:
+    with open_text(path) as fh:
         for line in fh:
             if line.startswith(">"):
                 n_sequences += 1

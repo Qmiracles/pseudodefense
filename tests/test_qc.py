@@ -29,6 +29,16 @@ def test_fasta_stats(tmp_path: Path):
     assert stats.gc_percent == pytest.approx(75.0)
 
 
+def test_fasta_stats_reads_gzip(tmp_path: Path):
+    import gzip
+
+    path = tmp_path / "g.fna.gz"
+    with gzip.open(path, "wt") as fh:
+        fh.write(">c0\nACGT\n>c1\nGGCCNN\n")
+    stats = qc.fasta_stats(path)
+    assert (stats.length, stats.n_sequences) == (10, 2)
+
+
 def test_failure_reasons_pass():
     stats = qc.FastaStats(length=50, n_sequences=1, gc_percent=50.0)
     assert qc.failure_reasons(stats, 99.0, 1.0, THRESHOLDS) == []

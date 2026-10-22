@@ -1,6 +1,7 @@
 # Resultados pesados (solo se versiona un ejemplo reducido, agregado explicitamente)
 results/*
 !results/.gitkeep
+results_*/
 .snakemake/
 resources/
 
@@ -15,8 +16,10 @@ dist/
 
 # Genomas y paquetes de NCBI
 *.fna
+*.fna.gz
 *.faa
 *.zip
+*.msh
 !tests/data/*.fna
 !tests/data/*.faa
 

@@ -63,6 +63,13 @@ def test_read_summary_drops_duplicates_and_blank_lines():
     assert len(table) == 1
 
 
+def test_filter_taxonomy_keeps_ok_only():
+    table = pd.DataFrame(
+        {"accession": ["A", "B", "C"], "ani_taxonomy_check": ["OK", "Inconclusive", None]}
+    )
+    assert download.filter_taxonomy(table)["accession"].tolist() == ["A"]
+
+
 def _table(n):
     return pd.DataFrame({"accession": [f"GCF_{i:09d}.1" for i in range(n)]})
 

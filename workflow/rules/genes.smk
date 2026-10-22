@@ -1,7 +1,7 @@
 rule predict_genes:
     """Proteins (.faa, for DefenseFinder) and GFF3 (for PADLOC) with pyrodigal."""
     input:
-        f"{OUT}/genomes/{{accession}}.fna",
+        f"{OUT}/genomes/{{accession}}.fna.gz",
     output:
         faa=f"{OUT}/genes/{{accession}}.faa",
         gff=f"{OUT}/genes/{{accession}}.gff",

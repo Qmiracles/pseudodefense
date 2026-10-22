@@ -9,7 +9,7 @@ from typing import Annotated
 import pandas as pd
 import typer
 
-from pseudodefense import defense, download, genes, plots, qc, stats, tables
+from pseudodefense import defense, derep, download, genes, plots, qc, stats, tables
 
 app = typer.Typer(help="Survey of anti-phage defense systems in Pseudomonas genomes.")
 
@@ -32,10 +32,16 @@ def select(
     out: Annotated[Path, typer.Option(help="Output TSV with selected genomes.")],
     n: Annotated[int | None, typer.Option(help="Number of genomes; omit for all.")] = None,
     seed: Annotated[int, typer.Option(help="Random seed for sampling.")] = 42,
+    require_ani_ok: Annotated[
+        bool, typer.Option(help="Keep only assemblies whose NCBI ANI taxonomy check is OK.")
+    ] = True,
 ) -> None:
     """Select genomes reproducibly from the metadata."""
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
     with summary_jsonl.open() as fh:
         table = download.read_summary(fh)
+    if require_ani_ok:
+        table = download.filter_taxonomy(table)
     selected = download.select_genomes(table, n, seed)
     out.parent.mkdir(parents=True, exist_ok=True)
     selected.to_csv(out, sep="\t", index=False)
@@ -47,10 +53,12 @@ def download_cmd(
     selected: Annotated[Path, typer.Option(help="TSV from `select`.")],
     genomes_dir: Annotated[Path, typer.Option(help="Directory for <accession>.fna files.")],
     manifest: Annotated[Path, typer.Option(help="Output manifest.tsv.")],
+    batch_size: Annotated[int, typer.Option(help="Genomes per datasets download.")] = 200,
 ) -> None:
-    """Download genome FASTA files and write the manifest."""
+    """Download genome FASTA files (gzip-compressed) and write the manifest."""
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
     table = pd.read_csv(selected, sep="\t")
-    download.download_genomes(table, genomes_dir, manifest)
+    download.download_genomes(table, genomes_dir, manifest, batch_size)
 
 
 @app.command("qc")
@@ -202,6 +210,71 @@ def plots_cmd(
         "Co-occurrence of defense systems",
         alpha,
         max_cooc_systems,
+    )
+
+
+@app.command("dereplicate")
+def dereplicate_cmd(
+    dist: Annotated[Path, typer.Option(help="All-vs-all `mash dist` output (.tsv or .tsv.gz).")],
+    manifest: Annotated[Path, typer.Option(help="manifest.tsv.")],
+    qc_report: Annotated[Path, typer.Option(help="qc_report.tsv.")],
+    threshold: Annotated[list[float], typer.Option(help="ANI threshold (%); repeatable.")],
+    outdir: Annotated[Path, typer.Option(help="Output directory.")],
+) -> None:
+    """Cluster near-identical genomes and pick one representative per cluster."""
+    d = derep.read_mash_dist(dist)
+    clusters = derep.cluster_genomes(d, threshold)
+    ranks = derep.quality_order(pd.read_csv(manifest, sep="\t"), pd.read_csv(qc_report, sep="\t"))
+    clusters = derep.choose_representatives(clusters, ranks, threshold)
+    outdir.mkdir(parents=True, exist_ok=True)
+    clusters.to_csv(outdir / "clusters.tsv", sep="\t", index=False)
+    summ = derep.summary(clusters, threshold)
+    summ.to_csv(outdir / "summary.tsv", sep="\t", index=False)
+    for t in threshold:
+        label = derep.threshold_label(t)
+        reps = clusters.loc[clusters[f"rep_{label}"], "accession"]
+        (outdir / f"representatives_{label}.txt").write_text("".join(f"{a}\n" for a in reps))
+    typer.echo(summ.to_string(index=False))
+
+
+@app.command("stats-derep")
+def stats_derep_cmd(
+    matrix: Annotated[Path, typer.Option(help="Presence/absence matrix, all genomes.")],
+    systems: Annotated[Path, typer.Option(help="Tidy systems table.")],
+    representatives: Annotated[
+        list[Path], typer.Option(help="representatives_<label>.txt; repeatable.")
+    ],
+    outdir: Annotated[Path, typer.Option(help="Output directory.")],
+    min_prevalence: Annotated[float, typer.Option()] = 0.05,
+    max_prevalence: Annotated[float, typer.Option()] = 0.95,
+    alpha: Annotated[float, typer.Option()] = 0.05,
+    min_genomes: Annotated[int, typer.Option()] = 1,
+    level: Annotated[str, typer.Option()] = "type",
+    linkage_bp: Annotated[int, typer.Option()] = 10_000,
+) -> None:
+    """Prevalence for all genomes and each dereplicated set; co-occurrence per set."""
+    m = pd.read_csv(matrix, sep="\t", index_col=0)
+    sys_table = pd.read_csv(systems, sep="\t")
+    outdir.mkdir(parents=True, exist_ok=True)
+    sets = {"all": list(m.index)}
+    for path in representatives:
+        sets[path.stem.removeprefix("representatives_")] = _read_accessions(path)
+    prev = []
+    for name, accs in sets.items():
+        p = stats.prevalence(m.loc[accs])
+        p.insert(0, "genome_set", name)
+        prev.append(p)
+        if name != "all":
+            sub = sys_table[sys_table["accession"].isin(accs)]
+            cooc = stats.cooccurrence(
+                m.loc[accs], min_prevalence, max_prevalence, alpha, min_genomes
+            )
+            cooc = stats.pair_linkage(cooc, sub, level, linkage_bp)
+            cooc.to_csv(outdir / f"cooccurrence_{name}.tsv", sep="\t", index=False)
+            n_sig = int((cooc["association"] != "ns").sum())
+            typer.echo(f"{name}: {len(accs)} genomes, {len(cooc)} pairs, {n_sig} with q < {alpha}")
+    pd.concat(prev, ignore_index=True).to_csv(
+        outdir / "prevalence_by_genome_set.tsv", sep="\t", index=False
     )
 
 
