@@ -9,7 +9,7 @@ from typing import Annotated
 import pandas as pd
 import typer
 
-from pseudodefense import defense, download, genes, qc
+from pseudodefense import defense, download, genes, plots, qc, stats, tables
 
 app = typer.Typer(help="Survey of anti-phage defense systems in Pseudomonas genomes.")
 
@@ -111,6 +111,98 @@ def parse_defense_cmd(
     systems.to_csv(systems_out, sep="\t", index=False)
     genes_table.to_csv(genes_out, sep="\t", index=False)
     typer.echo(f"{len(accs)} genomes, {len(systems)} systems, {len(genes_table)} gene rows")
+
+
+def _read_accessions(path: Path) -> list[str]:
+    return [line.strip() for line in path.read_text().splitlines() if line.strip()]
+
+
+@app.command("tables")
+def tables_cmd(
+    systems: Annotated[Path, typer.Option(help="Tidy systems table from `parse-defense`.")],
+    accessions: Annotated[Path, typer.Option(help="Genomes in the analysis (one per line).")],
+    outdir: Annotated[Path, typer.Option(help="Output directory.")],
+) -> None:
+    """Presence/absence matrices (type, subtype), counts per genome and subtype table."""
+    accs = _read_accessions(accessions)
+    table = pd.read_csv(systems, sep="\t")
+    outdir.mkdir(parents=True, exist_ok=True)
+    for level in tables.LEVELS:
+        tables.presence_matrix(table, accs, level).to_csv(outdir / f"matrix_{level}.tsv", sep="\t")
+    tables.systems_per_genome(table, accs).to_csv(
+        outdir / "systems_per_genome.tsv", sep="\t", index=False
+    )
+    tables.subtype_table(table, len(accs)).to_csv(outdir / "subtypes.tsv", sep="\t", index=False)
+
+
+@app.command("stats")
+def stats_cmd(
+    matrix: Annotated[Path, typer.Option(help="Presence/absence matrix (TSV).")],
+    prevalence_out: Annotated[Path, typer.Option(help="Output prevalence table.")],
+    cooccurrence_out: Annotated[Path, typer.Option(help="Output co-occurrence table.")],
+    min_prevalence: Annotated[float, typer.Option()] = 0.05,
+    max_prevalence: Annotated[float, typer.Option()] = 0.95,
+    alpha: Annotated[float, typer.Option(help="FDR level (Benjamini-Hochberg).")] = 0.05,
+    min_genomes: Annotated[
+        int, typer.Option(help="Min genomes with and without a system to test it.")
+    ] = 1,
+    systems: Annotated[
+        Path | None, typer.Option(help="Tidy systems table, to compute pair distances.")
+    ] = None,
+    level: Annotated[str, typer.Option(help="Matrix level (type or subtype).")] = "type",
+    linkage_bp: Annotated[int, typer.Option(help="Max median gap to flag a linked pair.")] = 10_000,
+) -> None:
+    """Prevalence with Wilson intervals and pairwise Fisher tests with BH correction."""
+    m = pd.read_csv(matrix, sep="\t", index_col=0)
+    prevalence_out.parent.mkdir(parents=True, exist_ok=True)
+    stats.prevalence(m).to_csv(prevalence_out, sep="\t", index=False)
+    cooc = stats.cooccurrence(m, min_prevalence, max_prevalence, alpha, min_genomes)
+    if systems is not None:
+        cooc = stats.pair_linkage(cooc, pd.read_csv(systems, sep="\t"), level, linkage_bp)
+    cooc.to_csv(cooccurrence_out, sep="\t", index=False)
+    sig = cooc["association"] != "ns"
+    msg = f"{len(cooc)} pairs tested, {int(sig.sum())} significant at q < {alpha}"
+    if "physically_linked" in cooc:
+        msg += f" ({int((sig & cooc['physically_linked']).sum())} physically linked)"
+    typer.echo(msg)
+
+
+@app.command("plots")
+def plots_cmd(
+    matrix: Annotated[Path, typer.Option(help="Presence/absence matrix (TSV).")],
+    prevalence: Annotated[Path, typer.Option(help="Prevalence table.")],
+    counts: Annotated[Path, typer.Option(help="systems_per_genome.tsv.")],
+    cooccurrence: Annotated[Path, typer.Option(help="Co-occurrence table.")],
+    outdir: Annotated[Path, typer.Option(help="Output directory for figures.")],
+    taxon: Annotated[str, typer.Option(help="Name used in figure titles.")],
+    top_n: Annotated[int, typer.Option()] = 30,
+    max_cooc_systems: Annotated[int, typer.Option()] = 40,
+    alpha: Annotated[float, typer.Option()] = 0.05,
+) -> None:
+    """Heatmap, prevalence bars, systems-per-genome histogram and co-occurrence matrix."""
+    m = pd.read_csv(matrix, sep="\t", index_col=0)
+    n = len(m)
+    plots.presence_heatmap(
+        m, outdir / "presence_heatmap.png", f"Defense systems in {n} {taxon} genomes"
+    )
+    plots.prevalence_bars(
+        pd.read_csv(prevalence, sep="\t"),
+        outdir / "prevalence.png",
+        f"Most prevalent defense systems ({taxon})",
+        top_n,
+    )
+    plots.systems_histogram(
+        pd.read_csv(counts, sep="\t"),
+        outdir / "systems_per_genome.png",
+        f"Defense systems per genome ({taxon}, n = {n})",
+    )
+    plots.cooccurrence_heatmap(
+        pd.read_csv(cooccurrence, sep="\t"),
+        outdir / "cooccurrence.png",
+        "Co-occurrence of defense systems",
+        alpha,
+        max_cooc_systems,
+    )
 
 
 if __name__ == "__main__":

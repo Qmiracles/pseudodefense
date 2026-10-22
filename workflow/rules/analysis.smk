@@ -1,0 +1,66 @@
+rule tables:
+    """Presence/absence matrices, systems per genome and subtype table."""
+    input:
+        systems=rules.parse_defense.output.systems,
+        accessions=f"{OUT}/qc/passed_accessions.txt",
+    output:
+        matrix_type=f"{OUT}/tables/matrix_type.tsv",
+        matrix_subtype=f"{OUT}/tables/matrix_subtype.tsv",
+        counts=f"{OUT}/tables/systems_per_genome.tsv",
+        subtypes=f"{OUT}/tables/subtypes.tsv",
+    log:
+        f"{OUT}/logs/tables.log",
+    shell:
+        "pseudodefense tables --systems {input.systems} --accessions {input.accessions} "
+        "--outdir {OUT}/tables > {log} 2>&1"
+
+
+rule stats:
+    """Prevalence (Wilson 95 % CI) and co-occurrence (Fisher + Benjamini-Hochberg)."""
+    input:
+        matrix=f"{OUT}/tables/matrix_{config['analysis']['level']}.tsv",
+        systems=rules.parse_defense.output.systems,
+    output:
+        prevalence=f"{OUT}/stats/prevalence.tsv",
+        cooccurrence=f"{OUT}/stats/cooccurrence.tsv",
+    params:
+        min_prev=config["analysis"]["cooccurrence_min_prevalence"],
+        max_prev=config["analysis"]["cooccurrence_max_prevalence"],
+        alpha=config["analysis"]["fdr_alpha"],
+        min_genomes=config["analysis"]["cooccurrence_min_genomes"],
+        level=config["analysis"]["level"],
+        linkage_bp=config["analysis"]["linkage_bp"],
+    log:
+        f"{OUT}/logs/stats.log",
+    shell:
+        "pseudodefense stats --matrix {input.matrix} --systems {input.systems} "
+        "--prevalence-out {output.prevalence} --cooccurrence-out {output.cooccurrence} "
+        "--min-prevalence {params.min_prev} --max-prevalence {params.max_prev} "
+        "--min-genomes {params.min_genomes} --alpha {params.alpha} "
+        "--level {params.level} --linkage-bp {params.linkage_bp} > {log} 2>&1"
+
+
+rule plots:
+    """Figures (PNG + SVG)."""
+    input:
+        matrix=f"{OUT}/tables/matrix_{config['analysis']['level']}.tsv",
+        prevalence=rules.stats.output.prevalence,
+        counts=rules.tables.output.counts,
+        cooccurrence=rules.stats.output.cooccurrence,
+    output:
+        heatmap=f"{OUT}/figures/presence_heatmap.png",
+        prevalence=f"{OUT}/figures/prevalence.png",
+        histogram=f"{OUT}/figures/systems_per_genome.png",
+        cooccurrence=f"{OUT}/figures/cooccurrence.png",
+    params:
+        taxon=config["taxon"],
+        top_n=config["analysis"]["prevalence_top_n"],
+        max_cooc=config["analysis"]["cooccurrence_plot_max_systems"],
+        alpha=config["analysis"]["fdr_alpha"],
+    log:
+        f"{OUT}/logs/plots.log",
+    shell:
+        "pseudodefense plots --matrix {input.matrix} --prevalence {input.prevalence} "
+        "--counts {input.counts} --cooccurrence {input.cooccurrence} "
+        "--outdir {OUT}/figures --taxon '{params.taxon}' --top-n {params.top_n} "
+        "--max-cooc-systems {params.max_cooc} --alpha {params.alpha} > {log} 2>&1"

@@ -35,4 +35,21 @@ defensefinder:
   coverage: 0.4                # cobertura minima del perfil (default de DefenseFinder)
   workers: 2                   # hilos por genoma
 
+# --- Analisis ---
+analysis:
+  level: type                  # type o subtype (clasificacion de DefenseFinder)
+  # Solo se prueban sistemas con prevalencia en este rango: los presentes en
+  # casi todos o casi ningun genoma no informan sobre co-ocurrencia.
+  cooccurrence_min_prevalence: 0.05
+  cooccurrence_max_prevalence: 0.95
+  # Ademas, presente en >= N genomas y ausente en >= N genomas (con n pequeno,
+  # el 5 % puede ser 1 genoma: pruebas sin poder que solo inflan BH).
+  cooccurrence_min_genomes: 3
+  fdr_alpha: 0.05              # Benjamini-Hochberg
+  # Pares cuya distancia mediana (mismo replicon) es <= linkage_bp se marcan como
+  # fisicamente ligados: co-ocurren por estar en el mismo locus.
+  linkage_bp: 10000
+  prevalence_top_n: 30         # barras en la figura de prevalencia
+  cooccurrence_plot_max_systems: 40
+
 threads: 4
